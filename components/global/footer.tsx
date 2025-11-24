@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Facebook,
   Instagram,
@@ -5,13 +7,74 @@ import {
   Mail,
   MapPin,
   ArrowRight,
+  Loader2,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
 const Footer = () => {
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Reset states
+    setError('');
+    setIsSuccess(false);
+
+    // Validate email
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(
+        'https://api.nexartechnologies.com/api/v1/subscribe/create',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: email,
+            businessUnit: 'Axium',
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to subscribe. Please try again.');
+      }
+
+      // Success
+      setIsSuccess(true);
+      setEmail('');
+
+      // Reset success message after 5 seconds
+      setTimeout(() => {
+        setIsSuccess(false);
+      }, 5000);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Something went wrong. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <footer className='bg-primary text-primary-foreground border-t border-primary-foreground/10'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20'>
@@ -35,19 +98,40 @@ const Footer = () => {
               <h4 className='font-semibold font-heading'>
                 Subscribe to our newsletter
               </h4>
-              <div className='flex gap-2 max-w-sm'>
-                <Input
-                  type='email'
-                  placeholder='Enter your email'
-                  className='bg-primary-foreground/5 border-primary-foreground/10 text-primary-foreground placeholder:text-primary-foreground/40 focus:border-secondary focus:ring-secondary/20 h-10'
-                />
-                <Button
-                  size='icon'
-                  className='bg-secondary text-secondary-foreground hover:bg-secondary/90 shrink-0'
-                >
-                  <ArrowRight className='h-4 w-4' />
-                </Button>
-              </div>
+              <form onSubmit={handleSubscribe} className='space-y-2'>
+                <div className='flex gap-2 max-w-sm'>
+                  <Input
+                    type='email'
+                    placeholder='Enter your email'
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading || isSuccess}
+                    className='bg-primary-foreground/5 border-primary-foreground/10 text-primary-foreground placeholder:text-primary-foreground/40 focus:border-secondary focus:ring-secondary/20 h-10'
+                  />
+                  <Button
+                    type='submit'
+                    size='icon'
+                    disabled={isLoading || isSuccess}
+                    className='bg-secondary text-secondary-foreground hover:bg-secondary/90 shrink-0'
+                  >
+                    {isLoading ? (
+                      <Loader2 className='h-4 w-4 animate-spin' />
+                    ) : isSuccess ? (
+                      <Check className='h-4 w-4' />
+                    ) : (
+                      <ArrowRight className='h-4 w-4' />
+                    )}
+                  </Button>
+                </div>
+                {error && (
+                  <p className='text-red-400 text-sm font-body'>{error}</p>
+                )}
+                {isSuccess && (
+                  <p className='text-green-400 text-sm font-body'>
+                    Successfully subscribed! Thank you.
+                  </p>
+                )}
+              </form>
             </div>
           </div>
 
